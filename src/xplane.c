@@ -1371,7 +1371,7 @@ get_pref_widget_status(void)
 void
 enable_replanning(void)
 {       
-    if (start_pb_enable) { // (re)planning is already enabled, noop
+    if (start_pb_enable || manual_bp_is_running()) { // (re)planning is already enabled, noop
         return;
     }
 
@@ -1384,6 +1384,11 @@ enable_replanning(void)
 void
 disable_replanning(void)
 {
+
+    if (manual_bp_is_running()) { 
+        return;
+    }
+
     start_pb_enable = B_FALSE;
     enable_menu_items();
     XPLMSetMenuItemName(root_menu, start_pb_menu_item, _("Start pushback"), 0);

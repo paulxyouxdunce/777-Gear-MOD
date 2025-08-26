@@ -1889,6 +1889,9 @@ void manual_bp_stop(void) {
     push_manual.requested = false;
 }
 
+bool_t manual_bp_is_running(void) {
+    return (push_manual.active || push_manual.requested) ;
+}
 
 /*
  * Tears down a pushback session. This resets all state variables, unloads the

@@ -20,6 +20,12 @@ project(bp)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD 11)
 
+if (NOT DEFINED COPYRIGHT_YEAR)
+    string(TIMESTAMP COPYRIGHT_YEAR "%Y")
+endif()
+
+add_compile_definitions(COPYRIGHT_YEAR="${COPYRIGHT_YEAR}")
+
 # Platform-specific variables
 if(APPLE)
 	set(PLAT_SHORT "mac64")

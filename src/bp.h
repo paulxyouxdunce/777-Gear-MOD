@@ -213,6 +213,7 @@ void manual_bp_start(void);
 void manual_bp_request(bool_t);
 void manual_bp_stop(void);
 bool_t manual_bp_is_running(void);
+void bp_status_refresh(void);
 
 extern bool_t late_plan_requested;
 

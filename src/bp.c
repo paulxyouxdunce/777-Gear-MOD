@@ -1604,6 +1604,7 @@ bp_start(void) {
 
     bp_started = B_TRUE;
     bp_conf_set_save_enabled(!bp_started);
+    bp_status_refresh();
 
     /*
      * Some aircraft (like the MD-80) do not have a taxi light switch,
@@ -1876,21 +1877,38 @@ void manual_bp_start() {
     push_manual.forward_direction = false;
     push_manual.angle = 0;
     logMsg("Manual push:  Starting %s yoke support", push_manual.with_yoke ? "with" : "without");
+    bp_status_refresh();
 }
 
 void manual_bp_request(bool_t with_yoke) {
     push_manual.active = false;
     push_manual.requested = true;
     push_manual.with_yoke = with_yoke;
+    bp_status_refresh();
 }
 
 void manual_bp_stop(void) {
     push_manual.active = false;
     push_manual.requested = false;
+    bp_status_refresh();
 }
 
 bool_t manual_bp_is_running(void) {
     return (push_manual.active || push_manual.requested) ;
+}
+
+void
+bp_status_refresh(void)
+{
+    bp_status_t status = BP_STATUS_INACTIVE;
+
+    if (push_manual.active) {
+        status = push_manual.pause ? BP_STATUS_PAUSED : BP_STATUS_ACTIVE;
+    } else if (bp_started) {
+        status = BP_STATUS_ACTIVE;
+    }
+
+    bp_status_set(status);
 }
 
 /*
@@ -1913,6 +1931,7 @@ bp_complete(void) {
     bp_conf_set_save_enabled(!bp_started);
     late_plan_requested = B_FALSE;
     plan_complete = B_FALSE;
+    bp_status_refresh();
 
     if (bp_ls.tug != NULL) {
         tug_free(bp_ls.tug);
@@ -3529,6 +3548,7 @@ bp_run(float elapsed, float elapsed2, int counter, void *refcon) {
                 } else {
                     push_manual.angle = 0;
                     push_manual.pause = false;
+                    bp_status_refresh();
                 }
                 turn_nosewheel(0);
                 push_at_speed(0, bp.veh.max_accel, B_FALSE, B_FALSE);

@@ -177,6 +177,7 @@ static dr_t bp_started_dr, bp_connected_dr, slave_mode_dr, op_complete_dr;
 static dr_cfg_t slave_mode_dr_cfg ;
 static dr_t plan_complete_dr, bp_tug_name_dr;
 static dr_t pb_set_remote_dr, pb_set_override_dr;
+static dr_t bp_status_dr;
 static dr_cfg_t pb_set_remote_dr_cfg, pb_set_override_dr_cfg;
 bool_t bp_started = B_FALSE;
 bool_t bp_connected = B_FALSE;
@@ -186,6 +187,21 @@ bool_t plan_complete = B_FALSE;
 bool_t pb_set_remote = B_FALSE;
 bool_t pb_set_override = B_FALSE;
 char bp_tug_name[64] = {0};
+static int bp_status = BP_STATUS_INACTIVE;
+
+void
+bp_status_set(bp_status_t status)
+{
+    if (bp_status != status) {
+        bp_status = status;
+    }
+}
+
+bp_status_t
+bp_status_get(void)
+{
+    return (bp_status_t)bp_status;
+}
 
 /*
  * Hides or unhides the default X-Plane 11 tug. This is done by renaming the
@@ -405,6 +421,7 @@ manual_push_start_handler_(XPLMCommandRef cmd, XPLMCommandPhase phase, void *ref
         return start_pb_handler_(cmd, phase, refcon);
     } else {
         push_manual.pause = !push_manual.pause;
+        bp_status_refresh();
         logMsg("Manual push: Status %s", push_manual.pause ? "paused" : "pushing");
         return (1);
     }
@@ -994,12 +1011,16 @@ XPluginStart(char *name, char *sig, char *desc)
         
     bp_boot_init();
 
+    bp_status_set(BP_STATUS_INACTIVE);
+
     dr_create_i(&bp_started_dr, (int *)&bp_started, B_FALSE,
                 "bp/started");
     dr_create_i(&bp_connected_dr, (int *)&bp_connected, B_FALSE,
                 "bp/connected");
-    
-    slave_mode_dr_cfg.write_cb = slave_mode_cb;    
+    dr_create_i(&bp_status_dr, &bp_status, B_FALSE,
+                "betterpushback/status");
+
+    slave_mode_dr_cfg.write_cb = slave_mode_cb;
     slave_mode_dr_cfg.writable = B_TRUE;    
     dr_create_i_cfg(&slave_mode_dr, (int *)&slave_mode, slave_mode_dr_cfg,
                 "bp/slave_mode");
@@ -1044,6 +1065,7 @@ XPluginStop(void)
     dr_delete(&bp_tug_name_dr);
     dr_delete(&pb_set_remote_dr);
     dr_delete(&pb_set_override_dr);
+    dr_delete(&bp_status_dr);
     dcr_fini();
 
     if (reload_floop_ID != NULL)
